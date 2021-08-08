@@ -16,9 +16,9 @@ print("Using:", device)
 
 
 class DDPG:
-    def __init__(self, render=False, num_process=4, memory_size=1000000, lr_p=1e-3, lr_v=1e-3, gamma=0.99, polyak=0.995,
-                 explore_size=10000, step_per_iter=3000, batch_size=100, min_update_step=1000, update_step=10,
-                 action_noise=0.1, seed=1, model_path=None, env_gamma=0.2, num_agents=3, env_grid=100):
+    def __init__(self, render=False, num_process=6, memory_size=1000000, lr_p=1e-3, lr_v=1e-3, gamma=0.99, polyak=0.995,
+                 explore_size=30000, step_per_iter=10000, batch_size=500, min_update_step=1000, update_step=200,
+                 action_noise=0.1, seed=1, model_path=None, env_gamma=0.2, num_agents=3, env_grid=20):
         self.gamma = gamma
         self.polyak = polyak
         self.memory = Memory(memory_size)
@@ -90,8 +90,8 @@ class DDPG:
                 self.env.render()
             # state = self.running_state(state)
             action = self.choose_action(state, 0)
-            action = self.filter_action(action)
-            state, reward, done = self.env.step(action)
+            filtered_action = self.filter_action(action)
+            state, reward, done = self.env.step(filtered_action)
 
             test_reward += reward
             if done:
@@ -135,11 +135,12 @@ class DDPG:
 
                 if global_steps < self.explore_size:  # explore
                     action = self.env.get_action_space_sample()
+                    filtered_action = action
                 else:  # action with noise
                     action = self.choose_action(state, self.action_noise)
-                    action = self.filter_action(action)
+                    filtered_action = self.filter_action(action)
 
-                next_state, reward, done = self.env.step(action)
+                next_state, reward, done = self.env.step(filtered_action)
                 mask = 0 if done else 1
                 # ('state', 'action', 'reward', 'next_state', 'mask', 'log_prob')
                 self.memory.push(state, action, reward, next_state, mask, None)

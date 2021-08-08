@@ -37,12 +37,12 @@ class MAGRID(gym.Env):
         return p_grid, p_start, p_end
 
     def get_observation(self):
-        obs = np.array([])
+        obs = list()
         for a in range(self.num_agents):
             for i in range(6):
-                obs = np.hstack([obs, self.p_grid[self.p_start[a]]])
-            obs = np.hstack([obs, np.array(list(map(lambda t1, t2: t1 - t2, tuple(self.p_end), self.p_start[a]))).squeeze().tolist()])
-        return obs.ravel()
+                obs.append(self.p_grid[self.p_start[a]])
+            obs += np.array(list(map(lambda t1, t2: t1 - t2, tuple(self.p_end), self.p_start[a]))).squeeze().tolist()
+        return np.array(obs)
 
     def get_done(self):
         done = False
@@ -66,7 +66,7 @@ class MAGRID(gym.Env):
                 else:
                     new_distance = sum(abs(np.array(list(map(lambda t1, t2: t1 - t2, tuple(self.p_end), self.p_start[a]))).squeeze()))
                     if new_distance < sum(old_distance[a]):
-                        reward += 0.1
+                        reward += 0.01
         return reward
 
     def step(self, action):
