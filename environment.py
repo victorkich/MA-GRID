@@ -4,13 +4,12 @@ import gym
 
 
 class MAGRID(gym.Env):
-    def __init__(self, num_agents, grid, gamma, max_steps):
+    def __init__(self, num_agents, grid, gamma):
         self.num_agents = num_agents
         self.grid = grid
         self.gamma = gamma
         self.p_grid, self.p_start, self.p_end = self.get_grid()
         self.num_steps = 0
-        self.max_steps = max_steps
         self.action = {0: (0, 0, 1), 1: (0, 1, 0), 2: (1, 0, 0), 3: (0, 0, -1), 4: (0, -1, 0), 5: (-1, 0, 0)}
         self.num_states = self.get_observation().size
         self.num_actions = num_agents * 3
@@ -47,7 +46,7 @@ class MAGRID(gym.Env):
 
     def get_done(self):
         done = False
-        if all([p == self.p_end for p in self.p_start]) or self.step == self.max_steps:
+        if all([p == self.p_end for p in self.p_start]):
             done = True
         return done
 

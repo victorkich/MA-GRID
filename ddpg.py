@@ -6,7 +6,6 @@ from ddpg_step import ddpg_step
 from models.Policy_ddpg import Policy
 from models.Value_ddpg import Value
 from replay_memory import Memory
-from utils.env_util import get_env_info
 from torch.utils.tensorboard import SummaryWriter
 from utils.file_util import check_path
 from utils.torch_util import device, FLOAT
@@ -17,9 +16,9 @@ print("Using:", device)
 
 
 class DDPG:
-    def __init__(self, render=False, num_process=1, memory_size=1000000, lr_p=1e-3, lr_v=1e-3, gamma=0.99, polyak=0.995,
-                 explore_size=10000, step_per_iter=3000, batch_size=100, min_update_step=1000, update_step=50,
-                 action_noise=0.1, seed=1, model_path=None, env_gamma=0.2, num_agents=3, max_steps=1000, env_grid=100):
+    def __init__(self, render=False, num_process=4, memory_size=1000000, lr_p=1e-3, lr_v=1e-3, gamma=0.99, polyak=0.995,
+                 explore_size=10000, step_per_iter=3000, batch_size=100, min_update_step=1000, update_step=10,
+                 action_noise=0.1, seed=1, model_path=None, env_gamma=0.2, num_agents=3, env_grid=100):
         self.gamma = gamma
         self.polyak = polyak
         self.memory = Memory(memory_size)
@@ -37,12 +36,11 @@ class DDPG:
         self.seed = seed
         self.env_gamma = env_gamma
         self.num_agents = num_agents
-        self.max_steps = max_steps
         self.env_grid = env_grid
         self._init_model()
 
     def _init_model(self):
-        self.env = MAGRID(self.num_agents, self.env_grid, self.env_gamma, self.max_steps)
+        self.env = MAGRID(self.num_agents, self.env_grid, self.env_gamma)
         self.num_states = self.env.num_states
         self.num_actions = self.env.num_actions
 
@@ -92,6 +90,7 @@ class DDPG:
                 self.env.render()
             # state = self.running_state(state)
             action = self.choose_action(state, 0)
+            action = self.filter_action(action)
             state, reward, done = self.env.step(action)
 
             test_reward += reward
@@ -99,6 +98,23 @@ class DDPG:
                 break
         print(f"Iter: {i_iter}, test Reward: {test_reward}")
         self.env.close()
+
+    def filter_action(self, action):
+        for i in range(round(action.size / 3)):
+            aux = i * 3
+            if abs(action[aux]) > abs(action[aux + 1]) and abs(action[aux]) > abs(action[aux + 2]):
+                action[aux] = -1 if action[aux] < 0 else 1
+                action[aux + 1] = 0
+                action[aux + 2] = 0
+            elif abs(action[aux]) < abs(action[aux + 1]) and abs(action[aux + 1]) > abs(action[aux + 2]):
+                action[aux] = 0
+                action[aux + 1] = -1 if action[aux + 1] < 0 else 1
+                action[aux + 2] = 0
+            else:
+                action[aux] = 0
+                action[aux + 1] = 0
+                action[aux + 2] = -1 if action[aux + 2] < 0 else 1
+        return action.astype(np.int32)
 
     def learn(self, writer, i_iter):
         """interact"""
@@ -122,21 +138,7 @@ class DDPG:
                     action = self.env.get_action_space_sample()
                 else:  # action with noise
                     action = self.choose_action(state, self.action_noise)
-                    for i in range(round(action.size / 3)):
-                        aux = i * 3
-                        if abs(action[aux]) > abs(action[aux + 1]) and abs(action[aux]) > abs(action[aux + 2]):
-                            action[aux] = -1 if action[aux] < 0 else 1
-                            action[aux + 1] = 0
-                            action[aux + 2] = 0
-                        elif abs(action[aux]) < abs(action[aux + 1]) and abs(action[aux+1]) > abs(action[aux + 2]):
-                            action[aux] = 0
-                            action[aux + 1] = -1 if action[aux + 1] < 0 else 1
-                            action[aux + 2] = 0
-                        else:
-                            action[aux] = 0
-                            action[aux + 1] = 0
-                            action[aux + 2] = -1 if action[aux + 2] < 0 else 1
-                    action = action.astype(np.int32)
+                    action = self.filter_action(action)
 
                 next_state, reward, done = self.env.step(action)
                 # next_state = self.running_state(next_state)
