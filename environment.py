@@ -52,6 +52,10 @@ class MAGRID(gym.Env):
         return done
 
     def get_reward(self, action):
+        old_distance = list()
+        for a in range(self.num_agents):
+            old_distance.append(abs(np.array(list(map(lambda t1, t2: t1 - t2, tuple(self.p_end), self.p_start[a]))).squeeze()))
+
         reward = 0
         for a in range(self.num_agents):
             position = tuple(self.p_start[a] + action[a])
@@ -60,6 +64,10 @@ class MAGRID(gym.Env):
                     self.p_start[a] = position
                 if position == self.p_end:
                     reward += 1
+                else:
+                    new_distance = sum(abs(np.array(list(map(lambda t1, t2: t1 - t2, tuple(self.p_end), self.p_start[a]))).squeeze()))
+                    if new_distance < sum(old_distance[a]):
+                        reward += 0.1
         return reward
 
     def step(self, action):

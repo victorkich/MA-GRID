@@ -13,12 +13,13 @@ from utils.torch_util import device, FLOAT
 from utils.zfilter import ZFilter
 from environment import MAGRID
 from tqdm import tqdm
+print("Using:", device)
 
 
 class DDPG:
     def __init__(self, render=False, num_process=1, memory_size=1000000, lr_p=1e-3, lr_v=1e-3, gamma=0.99, polyak=0.995,
                  explore_size=10000, step_per_iter=3000, batch_size=100, min_update_step=1000, update_step=50,
-                 action_noise=0.1, seed=1, model_path=None, env_gamma=0.2, num_agents=3, max_steps=200, env_grid=100):
+                 action_noise=0.1, seed=1, model_path=None, env_gamma=0.2, num_agents=3, max_steps=1000, env_grid=100):
         self.gamma = gamma
         self.polyak = polyak
         self.memory = Memory(memory_size)
@@ -135,7 +136,7 @@ class DDPG:
                             action[aux] = 0
                             action[aux + 1] = 0
                             action[aux + 2] = -1 if action[aux + 2] < 0 else 1
-                    action = action.astype(np.int)
+                    action = action.astype(np.int32)
 
                 next_state, reward, done = self.env.step(action)
                 # next_state = self.running_state(next_state)
