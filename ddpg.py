@@ -78,7 +78,7 @@ class DDPG:
         # add noise
         noise = noise_scale * np.random.randn(self.num_actions)
         action += noise
-        action = np.clip(action, -self.action_high, self.action_high)
+        action = np.clip(action, self.action_low, self.action_high)
         return action 
 
     def eval(self, i_iter, render=False):
