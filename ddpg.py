@@ -17,7 +17,7 @@ print("Using:", device)
 
 class DDPG:
     def __init__(self, render=False, num_process=6, memory_size=1000000, lr_p=1e-3, lr_v=1e-3, gamma=0.99, polyak=0.995,
-                 explore_size=30000, step_per_iter=10000, batch_size=500, min_update_step=1000, update_step=200,
+                 explore_size=30000, step_per_iter=3000, batch_size=100, min_update_step=1000, update_step=10,
                  action_noise=0.1, seed=1, model_path=None, env_gamma=0.2, num_agents=3, env_grid=20):
         self.gamma = gamma
         self.polyak = polyak
@@ -44,7 +44,7 @@ class DDPG:
         self.num_states = self.env.num_states
         self.num_actions = self.env.num_actions
 
-        self.action_low, self.action_high = -1, 1
+        self.action_low, self.action_high = 0, 5
         # seeding
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
@@ -135,12 +135,12 @@ class DDPG:
 
                 if global_steps < self.explore_size:  # explore
                     action = self.env.get_action_space_sample()
-                    filtered_action = action
+                    #filtered_action = action
                 else:  # action with noise
                     action = self.choose_action(state, self.action_noise)
-                    filtered_action = self.filter_action(action)
+                    #filtered_action = self.filter_action(action)
 
-                next_state, reward, done = self.env.step(filtered_action)
+                next_state, reward, done = self.env.step(action)
                 mask = 0 if done else 1
                 # ('state', 'action', 'reward', 'next_state', 'mask', 'log_prob')
                 self.memory.push(state, action, reward, next_state, mask, None)

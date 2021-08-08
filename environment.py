@@ -10,15 +10,16 @@ class MAGRID(gym.Env):
         self.gamma = gamma
         self.p_grid, self.p_start, self.p_end = self.get_grid()
         self.num_steps = 0
-        self.action = {0: (0, 0, 1), 1: (0, 1, 0), 2: (1, 0, 0), 3: (0, 0, -1), 4: (0, -1, 0), 5: (-1, 0, 0)}
+        self.action = {0: (0, 0, 1), 1: (0, 0, -1), 2: (0, 1, 0), 3: (0, -1, 0), 4: (1, 0, 0), 5: (-1, 0, 0)}
         self.num_states = self.get_observation().size
-        self.num_actions = num_agents * 3
+        self.num_actions = num_agents
 
     def get_action_space_sample(self):
-        sample = list()
-        for a in range(self.num_agents):
-            sample.append(self.action[np.random.randint(0, 6)])
-        return np.array(sample).ravel()
+        #sample = list()
+        #for a in range(self.num_agents):
+        #    sample.append(self.action[np.random.randint(0, 6)])
+        #return np.array(sample).ravel()
+        return np.random.randint(0, 6, self.num_agents)
 
     def get_grid(self):
         p_grid = np.random.choice(a=[0, 1], size=(self.grid, self.grid, self.grid), p=[1. - self.gamma, self.gamma])
@@ -57,7 +58,7 @@ class MAGRID(gym.Env):
 
         reward = 0
         for a in range(self.num_agents):
-            position = tuple(self.p_start[a] + action[a])
+            position = tuple(self.p_start[a] + np.array(self.action[action[a]]))
             if not any([p >= self.grid or p < 0 for p in position]):
                 if not self.p_grid[position] and not any([p == self.p_end for p in self.p_start]):
                     self.p_start[a] = position
