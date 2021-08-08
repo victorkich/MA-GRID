@@ -46,7 +46,7 @@ class MAGRID(gym.Env):
 
     def get_done(self):
         done = False
-        if all([p == self.p_end for p in self.p_start]):
+        if all([p == self.p_end for p in self.p_start]) or self.num_steps >= 1000:
             done = True
         return done
 

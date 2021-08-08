@@ -126,9 +126,8 @@ class DDPG:
         min_episode_reward = float('inf')
         max_episode_reward = float('-inf')
 
-        while num_steps < self.step_per_iter:
+        for _ in tqdm(range(self.step_per_iter)):
             state = self.env.reset()
-            # state = self.running_state(state)
             episode_reward = 0
             for t in range(10000):
                 if self.render:
@@ -141,7 +140,6 @@ class DDPG:
                     action = self.filter_action(action)
 
                 next_state, reward, done = self.env.step(action)
-                # next_state = self.running_state(next_state)
                 mask = 0 if done else 1
                 # ('state', 'action', 'reward', 'next_state', 'mask', 'log_prob')
                 self.memory.push(state, action, reward, next_state, mask, None)
@@ -166,8 +164,7 @@ class DDPG:
             min_episode_reward = min(episode_reward, min_episode_reward)
             max_episode_reward = max(episode_reward, max_episode_reward)
 
-        self.env.close()
-
+        # self.env.close()
         log['num_steps'] = num_steps
         log['num_episodes'] = num_episodes
         log['total_reward'] = total_reward
@@ -202,8 +199,7 @@ class DDPG:
     def save(self, save_path):
         """save model"""
         check_path(save_path)
-        pickle.dump((self.policy_net, self.value_net, self.running_state),
-                    open('{}/{}_ddpg.p'.format(save_path, 'MAGRID'), 'wb'))
+        pickle.dump((self.policy_net, self.value_net, self.running_state), open('{}/{}_ddpg.p'.format(save_path, 'MAGRID'), 'wb'))
 
 
 if __name__ == '__main__':
@@ -220,11 +216,8 @@ if __name__ == '__main__':
 
     for i_iter in range(1, max_iter + 1):
         ddpg.learn(writer, i_iter)
-
         if i_iter % eval_iter == 0:
             ddpg.eval(i_iter, render=render)
-
         if i_iter % save_iter == 0:
             ddpg.save(model_path)
-
         torch.cuda.empty_cache()
